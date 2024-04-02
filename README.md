@@ -52,7 +52,7 @@ The App ID will be stored in the `~/.wa/credentials` file.
 To query Wolfram Alpha, simply run:
 
 ```bash
-wa query <query>
+wa <query>
 ```
 
 #### Example
