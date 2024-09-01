@@ -2,9 +2,13 @@
 
 import requests
 import os
+from io import BytesIO
 import sys
+from PIL import Image
+from sixel import converter
 
 API_URL = "https://api.wolframalpha.com/v1/result"
+API_FULL_URL = "https://api.wolframalpha.com/v1/simple"
 HOME_DIR = os.path.expanduser("~")
 
 def configure():
@@ -38,13 +42,22 @@ def configure():
     print("API Key has been updated.")
     sys.exit(0)
 
-def make_request(query):
+def make_request(query, full_answer=False):
     '''
     Make a request to the Wolfram Alpha API and print the result.
     '''
     app_id = open(os.path.join(HOME_DIR, '.wa/credentials')).read().strip().split(' ')[-1]
-    response = requests.get(API_URL, params={'appid': app_id, 'i': query})
-    print(response.text)
+    if not full_answer:
+        response = requests.get(API_URL, params={'appid': app_id, 'i': query})
+        print(response.text)
+    else:
+        response = requests.get(API_FULL_URL, params={'units': 'metric', 'appid': app_id, 'i': query})
+        img = Image.open(BytesIO(response.content))
+        with BytesIO() as output:
+            img.save(output, format="PNG")
+            img.seek(0)
+            c = converter.SixelConverter(output)
+            c.write(sys.stdout)
 
 def main():
     '''
@@ -62,7 +75,11 @@ def main():
         return
 
     query = ' '.join(sys.argv[1:])
-    make_request(query)
+    if query.startswith("--full"):
+            make_request(' '.join(sys.argv[2:]), full_answer=True)
+
+    else:
+        make_request(query)
 
 if __name__ == '__main__':
     main()
