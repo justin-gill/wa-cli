@@ -1,12 +1,12 @@
 # wa-cli
 
-wa-cli is a command-line interface tool that allows you to query the Wolfram Alpha Short Answer API directly from your terminal.
+wa-cli is a command line tool for querying the Wolfram Alpha Short Answer and Simple API directly from your terminal.
 
 ## Features
 
-- **Configure API Key:** Easily configure your Wolfram Alpha App ID to authenticate API requests.
-- **Query Wolfram Alpha:** Send queries directly to the Wolfram Alpha API and receive detailed responses.
-- **Easy Installation:** Simple installation process to set up the CLI tool on your system.
+- **Text and Graphical Response:** Instant answers from the Wolfram Alpha API, including both text-based and graphical (sixel) outputs.
+- **API Key Management:** Easily configure your Wolfram Alpha App ID directly from the command line.
+- **Cross-Platform Configuration:** Adheres to XDG standards for configuration file locations
 
 ## Installation
 
@@ -24,12 +24,12 @@ To install wa-cli, follow these steps:
     cd wa-cli
     ```
 
-3. Run the installation script with sudo permissions:
+3. Run the installation script:
 
     ```bash
-    sudo ./install
+    ./install
     ```
-This will copy the script to `/usr/local/bin`
+This will copy the script to `XDG_BIN_HOME` and create a config file in `XDG_CONFIG_HOME`
 
 ## Usage
 
@@ -45,7 +45,7 @@ wa configure
 ```
 
 Follow the prompts to enter your App ID.
-The App ID will be stored in the `~/.wa/credentials` file.
+The App ID will be stored in a config.ini in your `XDG_CONFIG_HOME/wa-cli`
 
 ### Querying Wolfram Alpha
 
@@ -55,6 +55,13 @@ To query Wolfram Alpha, simply run:
 wa <query>
 ```
 
+You can also request a full answer using the --full flag
+Note: Currently, you must use a terminal that supports sixel (https://www.arewesixelyet.com/)
+
+```bash
+wa --full <query>
+```
+
 #### Example
 ```
 wa What is the capital of France?
@@ -62,9 +69,13 @@ wa What is the capital of France?
 
 ## Dependencies
 * python3
+* Pillow
+* sixel
+Note: For distros that don't support global pip installs (Arch, Debian, etc.), these packages will need to be installed with your package manager.
 
-## Issues/Improvements
-* Currently supports only short answer queries.
-* Limited to a fixed bin path and credentials file path, making it compatible only with Linux systems.
+## Future Improvements
+* Add Support Multiple Configuration Profiles
+* Terminal Graphics Protocol
 * Lack of API usage tracking.
+* Switch to another language because python for global scripts with dependencies is a bad idea :/
 

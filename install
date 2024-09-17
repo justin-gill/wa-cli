@@ -3,20 +3,57 @@
 import os
 import sys
 import shutil
+import configparser
+
+def get_bin_directory():
+    '''Determine the appropriate binary directory using XDG standards.'''
+    xdg_bin_home = os.getenv('XDG_BIN_HOME')
+    if xdg_bin_home:
+        return xdg_bin_home
+    return os.path.join(os.getenv('HOME'), '.local', 'bin')
+
+def get_config_directory():
+    '''Determine the appropriate config directory using XDG standards.'''
+    xdg_config_home = os.getenv('XDG_CONFIG_HOME')
+    if xdg_config_home:
+        return xdg_config_home
+    return os.path.join(os.getenv('HOME'), '.config')
+
+
+def create_default_config(config_file_path):
+    '''Create a default configuration file with a placeholder APP_ID.'''
+    config = configparser.ConfigParser()
+    config['DEFAULT'] = {
+        'APP_ID': '<YOUR_APP_ID_HERE>'
+    }
+    try:
+        with open(config_file_path, 'w') as configfile:
+            config.write(configfile)
+        print(f"Created default configuration file at {config_file_path}")
+    except Exception as e:
+        print(f"Error creating configuration file: {e}")
+        sys.exit(1)
 
 def main():
     '''
-    Entry point for the script. Installs wa to /usr/local/bin
+    Installs wa to XDG_BIN_HOME or $HOME/.local/bin
+    initializes wa-cli config directory to XDG_CONFIG_HOME or $HOME/.config/
     '''
-    if os.geteuid() != 0:
-        print("This script must be run as root")
-        sys.exit(1)
+    bin_directory = get_bin_directory()
+    config_directory = os.path.join(get_config_directory(), 'wa-cli')
+    config_file_path = os.path.join(config_directory, 'config.ini')
 
-    target_directory = '/usr/local/bin' # only supports Linux at the moment
+    if not os.path.exists(bin_directory):
+        os.makedirs(bin_directory)
+
+    if not os.path.exists(config_directory):
+        os.makedirs(config_directory)
 
     try:
-        shutil.copy("wa.py", os.path.join(target_directory, "wa"))
-        print("Installed wa to /usr/local/bin")
+        shutil.copy("wa.py", os.path.join(bin_directory, "wa"))
+        create_default_config(config_file_path)
+        print(f"Installed wa to {bin_directory}")
+        print(f"Created configuration in {config_directory}")
     except Exception as e:
         print(f"Error installing wa: {e}")
         sys.exit(1)
