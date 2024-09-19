@@ -10,14 +10,14 @@ use image::io::Reader;
 use std::io::Cursor;
 
 const API_URL: &str = "https://api.wolframalpha.com/v1/result";
-const API_FULL_URL: &str = "https://api.wolframalpha.com/v1/simple";
+const API_SIMPLE_URL: &str = "https://api.wolframalpha.com/v1/simple";
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Cli {
 
-    #[arg(long, short = 'f', action = clap::ArgAction::SetTrue)]
-    full: bool,
+    #[arg(long, short = 's', action = clap::ArgAction::SetTrue)]
+    simple: bool,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -38,6 +38,10 @@ enum Commands {
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
     app_id: String,
+    background: String,
+    foreground: String,
+    font_size: u32,
+    units: String,
 }
 
 fn get_config_directory() -> PathBuf {
@@ -58,33 +62,50 @@ fn configure() {
     io::stdin().read_line(&mut new_key).expect("Failed to read input");
     let new_key = new_key.trim();
 
-    let config = Config { app_id: new_key.to_string() };
+    let config = Config {
+        app_id: new_key.to_string(),
+        background: "FFFFFF".to_string(),
+        foreground: "000000".to_string(),
+        font_size: 14,
+        units: "metric".to_string(),
+    };
     let toml_string = toml::to_string(&config).expect("Failed to serialize config");
 
     fs::create_dir_all(config_directory).expect("Failed to create config directory");
     fs::write(config_file_path, toml_string).expect("Failed to write config file");
 
-    println!("API Key has been updated.");
+    println!("API Key has been updated and configuration has been reset");
     std::process::exit(0);
 }
 
-fn make_request(query: &str, full_answer: bool) {
-    let app_id = read_config().expect("API Key is not configured. Please run 'wa-cli configure' to set it up.");
+fn make_request(query: &str, simple_answer: bool) {
+    if query.is_empty() {
+        println!("Usage: wa-cli query [QUERY]");
+        std::process::exit(1);
+    }
+    let config = read_config().expect("Config file not found or invalid, please run `wa-cli configure`");
     let client = reqwest::blocking::Client::new();
 
-    let url = if full_answer {
-        API_FULL_URL
+    let url = if simple_answer {
+        API_SIMPLE_URL
     } else {
         API_URL
     };
 
     let response = client
         .get(url)
-        .query(&[("appid", app_id), ("i", query.to_string())])
+        .query(
+            &[("appid", config.app_id),
+            ("i", query.to_string()),
+            ("units", config.units),
+            ("background", config.background),
+            ("foreground", config.foreground),
+            ("fontsize", config.font_size.to_string())]
+        )
         .send()
         .expect("Failed to send request");
 
-    if full_answer {
+    if simple_answer {
         let bytes = response.bytes().expect("Failed to read response bytes");
 
         let img = Reader::new(Cursor::new(bytes))
@@ -93,14 +114,11 @@ fn make_request(query: &str, full_answer: bool) {
             .decode()
             .expect("Failed to decode image");
         
-        // need DynamicImage to be able to print it
         let conf = ViuerConfig {
             absolute_offset: false,
             ..Default::default()
         };
         viuer::print(&img, &conf).expect("Image printing failed.");
-
-        // Print image/gif file that is in the response to the terminal using sixel
         
     } else {
         let text = response.text().expect("Failed to read response text");
@@ -108,13 +126,13 @@ fn make_request(query: &str, full_answer: bool) {
     }
 }
 
-fn read_config() -> Option<String> {
+fn read_config() -> Option<Config> {
     let config_directory = get_config_directory();
     let config_file_path = config_directory.join("config.toml");
 
     if let Ok(config_contents) = fs::read_to_string(config_file_path) {
         let config: Config = toml::de::from_str(&config_contents).ok()?;
-        return Some(config.app_id);
+        return Some(config);
     }
 
     None
@@ -126,7 +144,7 @@ fn main() {
     match cli.command {
         Some(Commands::Configure) => configure(),
         Some(Commands::Query { query }) => {
-            make_request(&query, cli.full);
+            make_request(&query, cli.simple);
         }
         None => {
             println!("Usage: wa-cli [COMMAND]");
