@@ -5,7 +5,9 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use toml;
 use reqwest;
-use sixel_image::SixelImage;
+use viuer::Config as ViuerConfig;
+use image::io::Reader;
+use std::io::Cursor;
 
 const API_URL: &str = "https://api.wolframalpha.com/v1/result";
 const API_FULL_URL: &str = "https://api.wolframalpha.com/v1/simple";
@@ -83,11 +85,23 @@ fn make_request(query: &str, full_answer: bool) {
         .expect("Failed to send request");
 
     if full_answer {
-        // Read response bytes directly
         let bytes = response.bytes().expect("Failed to read response bytes");
-        let sixel_image = SixelImage::new(&bytes).unwrap();
-        let serialized = sixel_image.serialize();
-        println!("{}", serialized);
+
+        let img = Reader::new(Cursor::new(bytes))
+            .with_guessed_format()
+            .expect("Failed to read image")
+            .decode()
+            .expect("Failed to decode image");
+        
+        // need DynamicImage to be able to print it
+        let conf = ViuerConfig {
+            absolute_offset: false,
+            ..Default::default()
+        };
+        viuer::print(&img, &conf).expect("Image printing failed.");
+
+        // Print image/gif file that is in the response to the terminal using sixel
+        
     } else {
         let text = response.text().expect("Failed to read response text");
         println!("{}", text);

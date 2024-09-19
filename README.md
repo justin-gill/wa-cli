@@ -4,7 +4,7 @@ wa-cli is a command line tool for querying the Wolfram Alpha Short Answer and Si
 
 ## Features
 
-- **Text and Graphical Response:** Instant answers from the Wolfram Alpha API, including both text-based and graphical (sixel) outputs.
+- **Text and Graphical Response:** Instant answers from the Wolfram Alpha API, including both text-based and graphical outputs.
 - **API Key Management:** Easily configure your Wolfram Alpha App ID directly from the command line.
 - **Cross-Platform Configuration:** Adheres to XDG standards for configuration file locations
 
@@ -21,15 +21,9 @@ To install wa-cli, follow these steps:
 2. Navigate to the project directory:
 
     ```bash
-    cd wa-cli
+    cargo install --path .
     ```
-
-3. Run the installation script:
-
-    ```bash
-    ./install
-    ```
-This will copy the script to `XDG_BIN_HOME` and create a config file in `XDG_CONFIG_HOME`
+Make sure $CARGO_HOME/bin is in your PATH
 
 ## Usage
 
@@ -41,41 +35,30 @@ To get an App ID, visit the [Wolfram Alpha Developer Portal](https://developer.w
 To configure your Wolfram Alpha App ID, run:
 
 ```bash
-wa configure
+wa-cli configure
 ```
 
 Follow the prompts to enter your App ID.
-The App ID will be stored in a config.ini in your `XDG_CONFIG_HOME/wa-cli`
+The App ID will be stored in a config.toml in your `XDG_CONFIG_HOME/wa-cli`
 
 ### Querying Wolfram Alpha
 
 To query Wolfram Alpha, simply run:
 
 ```bash
-wa <query>
+wa-cli query "<query>"
 ```
 
 You can also request a full answer using the --full flag
-Note: Currently, you must use a terminal that supports sixel (https://www.arewesixelyet.com/)
+Note: Will not work within tmux, refer to this [issue](https://github.com/atanunq/viuer/issues/29)
 
 ```bash
-wa --full <query>
-```
-
-#### Example
-```
-wa What is the capital of France?
+wa-cli --full query "<query>"
 ```
 
 ## Dependencies
-* python3
-* Pillow
-* sixel
-Note: For distros that don't support global pip installs (Arch, Debian, etc.), these packages will need to be installed with your package manager.
+* [Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html)
 
 ## Future Improvements
-* Add Support Multiple Configuration Profiles
-* Terminal Graphics Protocol
-* Lack of API usage tracking.
-* Switch to another language because python for global scripts with dependencies is a bad idea :/
+* More configuration options
 
